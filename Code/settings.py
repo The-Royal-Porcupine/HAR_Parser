@@ -1,0 +1,1 @@
+HAR_PATH = '/Users/annademidova/PycharmProjects/Project "HAR Parser"/HAR Files/elaborator 2.0 - charts 17.05.2020 (initial loading after upgrade).har'
