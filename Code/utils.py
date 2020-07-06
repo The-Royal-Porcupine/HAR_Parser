@@ -11,6 +11,7 @@ def get_story_runtime_data(calls):
                                        i.status, i.transfer_size] for i in calls)
     story_runtime_data.index = np.arange(1, len(story_runtime_data) + 1)
     story_runtime_data.columns = columns
+    story_runtime_data['URL'] = story_runtime_data['URL'].apply(lambda x: check_name_url(x))
     timings = pd.DataFrame(i.timings for i in calls)
     timings.index = np.arange(1, len(timings) + 1)
     story_runtime_data = pd.concat((story_runtime_data, timings), axis=1)
@@ -90,3 +91,24 @@ def check_time(timings):
             timings_res[time] = 0
 
     return timings_res
+
+
+def check_name_url(url):
+    if   url.find('contentlib')!=-1: url = 'Content Library'
+    elif url.find('Pusher')!=-1: url = 'Pusher'
+    elif url.find('GetResponse') != -1: url = 'Get Response'
+    elif url.find('photo') != -1: url = 'Picture Loading'
+    elif url.find('uiAssets/img') != -1: url = 'Image Loading'
+    elif url.find('get-static-content') != -1: url = 'Static Content Loading'
+    elif url.find('inputScheduleVersions') != -1: url = 'Load Versions Info'
+    elif url.find('application/data') != -1: url = 'Get Application Data'
+    elif url.find('application/data') != -1: url = 'Get Application Data'
+    elif url.find('queryStatistics') != -1: url = 'Get Statistics'
+    elif url.find('userFriendlyPerfLog') != -1: url = 'Get User Friendly Performance Log'
+    elif url.find('commenting') != -1: url = 'Get Comments'
+    elif url.find('fonts') != -1: url = 'Fonts Uploading'
+    elif url.find('commenting') != -1: url = 'Get Comments'
+    elif url.find('indexeddb.worker') != -1: url = 'Scripts or Something'
+    return url
+
+

@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod, abstractproperty
 import settings
 import utils
 
-
 pd.options.display.max_columns = None
 pd.options.display.width = None
 
@@ -72,7 +71,6 @@ class Story_2(StoryInterface):
 
 
 class Call:
-
 
     def __init__(self, url, start_timestamp='', total_time=0, body_size=0,
                  resource_type=0, status=0, transfer_size=0, timings=None,
@@ -152,22 +150,23 @@ class StoryAnalyzer:
                 if isinstance(json.loads(call['response']['content']['text']), list):
                     continue
                 elif "resource" in json.loads(call['response']['content']['text']).keys():
-                    story_tmp = Story_2(story_id = address_of_info['resource']['resourceId'],
-                                        story_name = address_of_info['resource']['name'],
-                                        story_description = address_of_info['resource']['description'],
-                                        story_createdby = address_of_info['resource']['createdByDisplayName'],
-                                        story_createdtime = address_of_info['resource']['createdTime'],
-                                        story_modifiedby = address_of_info['resource']['modifiedByDisplayName'],
-                                        story_modifiedtime = datetime.strptime(address_of_info['resource']['modifiedTime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
+                    story_tmp = Story_2(story_id=address_of_info['resource']['resourceId'],
+                                        story_name=address_of_info['resource']['name'],
+                                        story_description=address_of_info['resource']['description'],
+                                        story_createdby=address_of_info['resource']['createdByDisplayName'],
+                                        story_createdtime=address_of_info['resource']['createdTime'],
+                                        story_modifiedby=address_of_info['resource']['modifiedByDisplayName'],
+                                        story_modifiedtime=datetime.strptime(
+                                            address_of_info['resource']['modifiedTime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
                     story_info[address_of_info['resource']['resourceId']] = story_tmp
                 elif "resourceId" in json.loads(call['response']['content']['text']).keys():
-                    story_tmp = Story_2(story_id = address_of_info['resourceId'],
-                                        story_name = address_of_info['name'],
-                                        story_description = address_of_info['description'],
-                                        story_createdby = address_of_info['createdBy'],
-                                        story_createdtime = address_of_info['createdTime'],
-                                        story_modifiedby = address_of_info['modifiedBy'],
-                                        story_modifiedtime = address_of_info['modifiedTime'])
+                    story_tmp = Story_2(story_id=address_of_info['resourceId'],
+                                        story_name=address_of_info['name'],
+                                        story_description=address_of_info['description'],
+                                        story_createdby=address_of_info['createdBy'],
+                                        story_createdtime=address_of_info['createdTime'],
+                                        story_modifiedby=address_of_info['modifiedBy'],
+                                        story_modifiedtime=address_of_info['modifiedTime'])
                     story_info[address_of_info['resourceId']] = story_tmp
         return story_info
 
@@ -198,7 +197,7 @@ class StoryAnalyzer:
         product_info = {}
         for call in self.calls:
             if call['request']['url'].__contains__('application/data') and call['request']['postData'][
-                                                                                'text'].__contains__('installationID'):
+                'text'].__contains__('installationID'):
                 if json.loads(call['request']['postData']['text'])['installationID'] not in product_info.keys():
                     product_info[json.loads(call['request']['postData']['text'])['installationID']] = Product(
                         json.loads(call['request']['postData']['text'])['installationID'],
@@ -228,46 +227,51 @@ class StoryAnalyzer:
                             ))
         return widgets
 
+    # сначала соьрать виджеты и все остальное, потом вызвать конструктор
 
-# сначала соьрать виджеты и все остальное, потом вызвать конструктор
     def get_calls_info(self):
         calls = []
         for call in self.calls:
-            call_tmp = Call()
-            call_tmp.url = call['request']['url']
-            call_tmp.start_timestamp = call['startedDateTime']
-            call_tmp.total_time = call['time']
-            call_tmp.body_size = call['request']['bodySize']
-            call_tmp.resource_type = call['_resourceType']
-            call_tmp.status = call['response']['status']
-            call_tmp.transfer_size = call['response']['_transferSize']
-            call_tmp.timings = utils.check_time(call['timings'])
+            tmp_stories = []
+            tmp_widgets = []
+            tmp_measurements = []
+            tmp_runtime = 0
             if call['request']['url'].__contains__('GetResponse'):
                 # Getting Story Name:
                 if "ClientInfo" in json.loads(call['request']['postData']['text']).keys():
-                    call_tmp.stories.append(
+                    tmp_stories.append(
                         json.loads(call['request']['postData']['text'])['ClientInfo']['Context']['StoryName'])
                     # Getting Widget IDs
                     if "WidgetId" in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'].keys():
                         for widget in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'][
-                                                                                                    'WidgetId']:
+                            'WidgetId']:
                             widget = widget.replace('-', '')
-                            if widget not in set(call_tmp.widgets):
-                                call_tmp.widgets.append(widget)
+                            if widget not in set(tmp_widgets):
+                                tmp_widgets.append(widget)
                 # Getting Runtime
                 if 'PerformanceData' in json.loads(call['response']['content']['text']).keys():
-                    call_tmp.runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
+                    tmp_runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
+                    #                    call_tmp.runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
                     # Getting Measurements. Measurements is a list of dictionaries formatted like {'Description': '',
                     # 'Time': '', 'Calls': ''}
-                    measurements = []
                     for measure in json.loads(call['response']['content']['text'])['PerformanceData']['Measurements']:
-                        measurements.append(measure)
-                    call_tmp.measurements = measurements
+                        tmp_measurements.append(measure)
+            #                    call_tmp.measurements = measurements
+            call_tmp = Call(url=call['request']['url'],
+                            start_timestamp=call['startedDateTime'],
+                            total_time=call['time'],
+                            body_size=call['request']['bodySize'],
+                            resource_type=call['_resourceType'],
+                            status=call['response']['status'],
+                            transfer_size=call['response']['_transferSize'],
+                            timings=utils.check_time(call['timings']),
+                            stories=tmp_stories,
+                            widgets=tmp_widgets,
+                            runtime=tmp_runtime,
+                            measurements=tmp_measurements)
             calls.append(call_tmp)
             del call_tmp
         return calls
-
-
 
 
 # Export Part
