@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="63a3c457-d6fc-4ea2-b20c-ab7137872f83" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/HAR_Parser.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/HAR_Parser.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/HAR_Analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code/HAR_Analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code/utils.py" afterDir="false" />
-    </list>
+    <list default="true" id="63a3c457-d6fc-4ea2-b20c-ab7137872f83" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -97,12 +91,20 @@
       <option name="project" value="LOCAL" />
       <updated>1593527332897</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="before pptx">
+      <created>1594030996804</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1594030996804</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="First Commit" />
+    <MESSAGE value="before pptx" />
+    <option name="LAST_COMMIT_MESSAGE" value="before pptx" />
   </component>
   <component name="WindowStateProjectService">
     <state x="438" y="63" key="#HAR_Analysis" timestamp="1593626650629">
@@ -119,9 +121,10 @@
     </state>
     <state x="443" y="289" key="#xdebugger.evaluate/0.23.1440.831@0.23.1440.831" timestamp="1594026572422" />
     <state x="483" y="156" key="#xdebugger.evaluate/0.23.1440.833@0.23.1440.833" timestamp="1593627788707" />
-    <state x="345" y="44" key="CommitChangelistDialog2" timestamp="1593527332140">
-      <screen x="0" y="23" width="1440" height="832" />
+    <state x="345" y="44" key="CommitChangelistDialog2" timestamp="1594031118968">
+      <screen x="0" y="23" width="1440" height="831" />
     </state>
+    <state x="345" y="44" key="CommitChangelistDialog2/0.23.1440.831@0.23.1440.831" timestamp="1594031118968" />
     <state x="345" y="44" key="CommitChangelistDialog2/0.23.1440.832@0.23.1440.832" timestamp="1593527332140" />
     <state width="1419" height="198" key="GridCell.Tab.0.bottom" timestamp="1594030708546">
       <screen x="0" y="23" width="1440" height="831" />
@@ -171,17 +174,18 @@
       <screen x="0" y="23" width="1440" height="834" />
     </state>
     <state x="229" y="78" key="SettingsEditor/0.23.1440.834@0.23.1440.834" timestamp="1593626698043" />
-    <state x="320" y="180" key="Vcs.Push.Dialog.v2" timestamp="1593527339129">
-      <screen x="0" y="23" width="1440" height="832" />
+    <state x="320" y="180" key="Vcs.Push.Dialog.v2" timestamp="1594031003980">
+      <screen x="0" y="23" width="1440" height="831" />
     </state>
+    <state x="320" y="180" key="Vcs.Push.Dialog.v2/0.23.1440.831@0.23.1440.831" timestamp="1594031003980" />
     <state x="320" y="180" key="Vcs.Push.Dialog.v2/0.23.1440.832@0.23.1440.832" timestamp="1593527339129" />
     <state x="376" y="273" key="com.intellij.ide.util.TipDialog" timestamp="1593527234238">
       <screen x="0" y="23" width="1440" height="832" />
     </state>
     <state x="376" y="273" key="com.intellij.ide.util.TipDialog/0.23.1440.832@0.23.1440.832" timestamp="1593527234238" />
-    <state x="509" y="362" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1594030718666">
+    <state x="509" y="362" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1594031152200">
       <screen x="0" y="23" width="1440" height="831" />
     </state>
-    <state x="509" y="362" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.23.1440.831@0.23.1440.831" timestamp="1594030718665" />
+    <state x="509" y="362" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.23.1440.831@0.23.1440.831" timestamp="1594031152200" />
   </component>
 </project>
