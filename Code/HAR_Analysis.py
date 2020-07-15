@@ -3,6 +3,7 @@ import pandas as pd
 from tabulate import tabulate
 from datetime import datetime, date
 from abc import ABC, abstractmethod, abstractproperty
+from pptx import Presentation
 
 import settings
 import utils
@@ -12,21 +13,66 @@ pd.options.display.width = None
 
 
 # Descriptive classes
+# Widgets from Story_Entity from Content Library
 
-class Widget:
+class WidgetInterface(ABC):
+    def __init__(self, widget_id):
+        self.widget_id = widget_id or ''
+
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+
+class Widget(WidgetInterface):
 
     def __init__(self, widget_id, widget_type, widget_name, widget_duration, widget_timestamp):
-        self.widget_id = widget_id
+        super().__init__(widget_id)
         self.widget_type = widget_type
         self.widget_name = widget_name
         self.widget_ttfb = 0
         self.widget_duration = widget_duration
         self.widget_timestamp = widget_timestamp.strftime('%m.%d.%Y %H:%M:%S')
 
+    @property
     def __str__(self) -> str:
         return f'widget_id: {self.widget_id}, widget_type: {self.widget_type}, widget_name: {self.widget_name},' \
                f'widget_ttfb: {self.widget_ttfb}, widget_duration: {self.widget_duration}, ' \
                f'widget_timestamp: {self.widget_timestamp}'
+
+
+class Widget_2(WidgetInterface):
+
+    def __init__(self, story_entity_id, story_entity_name, page_title, widget_class, widget_id, widget_title):
+        super().__init__(widget_id)
+        self.story_entity_id = story_entity_id or ''
+        self.story_entity_name = story_entity_name or ''
+        self.page_title = page_title or ''
+        self.widget_class = widget_class or ''
+        self.widget_title = widget_title or ''
+
+    def __str__(self) -> str:
+        pass
+
+
+class Widget_3(WidgetInterface):
+
+    def __init__(self, widget_id, widget_type, widget_name, widget_ttfb, widget_duration, widget_timestamp,
+                 story_entity_id, story_entity_name, page_title, widget_class, widget_title):
+        super().__init__(widget_id)
+        self.widget_type = widget_type
+        self.widget_name = widget_name
+        self.widget_ttfb = widget_ttfb or 0
+        self.widget_duration = widget_duration
+        self.widget_timestamp = widget_timestamp
+        self.story_entity_id = story_entity_id or ''
+        self.story_entity_name = story_entity_name or ''
+        self.page_title = page_title or ''
+        self.widget_class = widget_class or ''
+        self.widget_title = widget_title or ''
+
+    def __str__(self) -> str:
+        pass
 
 
 class StoryInterface(ABC):
@@ -156,8 +202,7 @@ class StoryAnalyzer:
                                         story_createdby=address_of_info['resource']['createdByDisplayName'],
                                         story_createdtime=address_of_info['resource']['createdTime'],
                                         story_modifiedby=address_of_info['resource']['modifiedByDisplayName'],
-                                        story_modifiedtime=datetime.strptime(
-                                            address_of_info['resource']['modifiedTime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
+                                        story_modifiedtime= address_of_info['resource']['modifiedTime'])
                     story_info[address_of_info['resource']['resourceId']] = story_tmp
                 elif "resourceId" in json.loads(call['response']['content']['text']).keys():
                     story_tmp = Story_2(story_id=address_of_info['resourceId'],
@@ -227,7 +272,7 @@ class StoryAnalyzer:
                             ))
         return widgets
 
-    # сначала соьрать виджеты и все остальное, потом вызвать конструктор
+    # сначала собрать виджеты и все остальное, потом вызвать конструктор
 
     def get_calls_info(self):
         calls = []
@@ -273,62 +318,136 @@ class StoryAnalyzer:
             del call_tmp
         return calls
 
+    def get_widgets_contentlib_info(self):
+        calls = []
+        widgets = []
+        widget_id_set = set()
+        for call in self.calls:
+            if call['request']['url'].__contains__('contentlib'):
+                address_of_info = json.loads(call['response']['content']['text'])
+                if isinstance(json.loads(call['response']['content']['text']), dict):
+                    if 'cdata' in address_of_info.keys():
+                        for entry in address_of_info:
+                            for entity in address_of_info['cdata']['content']['entities']:
+                                if entity['type'] == 'story':
+                                    for page in entity['data']['pages']:
+                                            for widget in page['content']['widgets']:
+                                                if widget != None:
+                                                    widget_id_tmp = widget['id'].replace('-', '')
+                                                    if widget_id_tmp not in widget_id_set:
+                                                        widget_id_set.add(widget_id_tmp)
+                                                        story_entity_id_tmp = entity['data']['id'].replace('-', '')
+                                                        story_entity_name_tmp = entity['data']['title']
+                                                        page_title_tmp = page['title']
+                                                        widget_class_tmp = widget['class'].split('.')[-1]
+                                                        if widget_class_tmp == 'InfochartVizWidget':
+                                                             widget_title_tmp = widget['definition']['vizContent']['vizDefinition']['chart']['title'] + ' ' + widget['definition']['vizContent']['vizDefinition']['chart']['subTitle']
+                                                        else: widget_title_tmp = 'No title'
+                                                        widget_2_tmp = Widget_2(story_entity_id=story_entity_id_tmp,
+                                                                                story_entity_name=story_entity_name_tmp,
+                                                                                page_title=page_title_tmp,
+                                                                                widget_class=widget_class_tmp,
+                                                                                widget_id=widget_id_tmp,
+                                                                                widget_title=widget_title_tmp)
+                                                        widgets.append(widget_2_tmp)
+                    elif 'resource' in address_of_info.keys():
+                        if 'cdata' in address_of_info['resource'].keys():
+                            for entry in address_of_info:
+                                for entity in address_of_info['resource']['cdata']['content']['entities']:
+                                    if entity['type'] == 'story':
+                                        for page in entity['data']['pages']:
+                                                for widget in page['content']['widgets']:
+                                                    if widget != None:
+                                                        widget_id_tmp = widget['id'].replace('-', '')
+                                                        if widget_id_tmp not in widget_id_set:
+                                                            widget_id_set.add(widget_id_tmp)
+                                                            story_entity_id_tmp = entity['data']['id'].replace('-', '')
+                                                            story_entity_name_tmp = entity['data']['title']
+                                                            page_title_tmp = page['title']
+                                                            widget_class_tmp = widget['class'].split('.')[-1]
+                                                            if widget_class_tmp == 'InfochartVizWidget':
+                                                                 widget_title_tmp = widget['definition']['vizContent']['vizDefinition']['chart']['title'] + ' ' + widget['definition']['vizContent']['vizDefinition']['chart']['subTitle']
+                                                            else: widget_title_tmp = 'No title'
+                                                            widget_2_tmp = Widget_2(story_entity_id=story_entity_id_tmp,
+                                                                                    story_entity_name=story_entity_name_tmp,
+                                                                                    page_title=page_title_tmp,
+                                                                                    widget_class=widget_class_tmp,
+                                                                                    widget_id=widget_id_tmp,
+                                                                                    widget_title=widget_title_tmp)
+                                                            widgets.append(widget_2_tmp)
+                    else: continue
+        return widgets
+
+
+# Можно было мерджить 2 датафрейма
+
+def get_common_widgets_info(perflog_widgets, contentlib_widgets):
+    widgets = {}
+    for cntwidget in contentlib_widgets:
+            if cntwidget.widget_id in perflog_widgets.keys():
+                widgets[cntwidget.widget_id] = (Widget_3(story_entity_id=cntwidget.story_entity_id,
+                                      story_entity_name=cntwidget.story_entity_name,
+                                      page_title=cntwidget.page_title,
+                                      widget_id = cntwidget.widget_id,
+                                      widget_class=cntwidget.widget_class,
+                                      widget_title=cntwidget.widget_title,
+                                      widget_type=perflog_widgets[cntwidget.widget_id].widget_type,
+                                      widget_name=perflog_widgets[cntwidget.widget_id].widget_name,
+                                      widget_ttfb=perflog_widgets[cntwidget.widget_id].widget_ttfb,
+                                      widget_duration=perflog_widgets[cntwidget.widget_id].widget_duration,
+                                      widget_timestamp=perflog_widgets[cntwidget.widget_id].widget_timestamp))
+            else:
+                widgets[cntwidget.widget_id] = (Widget_3(story_entity_id=cntwidget.story_entity_id,
+                                      story_entity_name=cntwidget.story_entity_name,
+                                      page_title=cntwidget.page_title,
+                                      widget_id = cntwidget.widget_id,
+                                      widget_class=cntwidget.widget_class,
+                                      widget_title=cntwidget.widget_title,
+                                      widget_type='Unknown',
+                                      widget_name='Unknown',
+                                      widget_ttfb=0,
+                                      widget_duration=0,
+                                      widget_timestamp=0))
+    return widgets
+
 
 # Export Part
 
 test_analysis = StoryAnalyzer(settings.HAR_PATH)
 test_analysis.read_har_file()
+
+test_widgets_content_lib = test_analysis.get_widgets_contentlib_info()
+
 test_calls = test_analysis.get_calls_info()
 test_products = test_analysis.get_product_info()
 test_widgets = test_analysis.get_widgets_info()
 test_story = test_analysis.get_story_info_2()
+common_widgets = get_common_widgets_info(test_widgets, test_widgets_content_lib)
 
 story_runtime = utils.get_story_runtime_data(test_calls)
 story_summary = utils.get_story_summary(test_calls)
 widgets_frame = utils.get_widget_frame(test_widgets)
-
 product_frame = utils.get_product_frame(test_products)
 story_frame = utils.get_story_frame(test_story)
 story_product_frame = pd.concat((product_frame, story_frame))
+common_widgets_frame = utils.get_common_widget_frame(common_widgets)
+
+get_response_calls = list(filter(lambda x: (x.url.__contains__('GetResponse')), test_calls))
 
 with pd.ExcelWriter('story_tables_generated.xlsx', mode='A') as writer:
     story_runtime.to_excel(writer, sheet_name='story_runtime')
     story_summary.to_excel(writer, sheet_name='story_metadata')
     story_product_frame.to_excel(writer, sheet_name='general_info')
-    widgets_frame.to_excel(writer, sheet_name='widget_runtime')
+    widgets_frame.to_excel(writer, sheet_name='widget_runtime_perflog')
+    common_widgets_frame.to_excel(writer, sheet_name='widget_runtime_common')
+    idx = 0
+    for call in get_response_calls:
+        if call.measurements:
+            test_frame = utils.get_response_frames(call, common_widgets)
+            sheet_name_1 = 'Get Response Timings ' + str(idx+1)
+            sheet_name_2 = 'Get Response Meta ' + str(idx+1)
+            test_frame[0].to_excel(writer, sheet_name=sheet_name_1)
+            test_frame[1].to_excel(writer, sheet_name=sheet_name_2)
+            idx +=1
 
 writer.save()
-
-#
-# widget_info = test_analysis.get_widgets_info()
-# print(get_widget_frame(widget_info))
-#
-calls_test = test_analysis.get_calls_info()
-widgets_test = test_analysis.get_widgets_info()
-for call in calls_test:
-    if call.measurements:
-        print(call.url)
-        measurements = pd.DataFrame(i for i in call.measurements)
-        datatabulate = lambda data: tabulate(measurements, headers='keys', tablefmt='psql')
-        print(datatabulate(measurements))
-    if call.widgets:
-        for i in call.widgets:
-            print((i))
-            if i in widgets_test.keys():
-                print(widgets_test[i].widget_name, widgets_test[i].widget_duration)
-            widgets = pd.DataFrame((i for i in call.widgets), columns=['Widget ID'])
-            datatabulate = lambda data: tabulate(widgets, headers='keys', tablefmt='psql')
-            print(datatabulate(widgets))
-
-# datatabulate = lambda data: tabulate(data, headers='keys', tablefmt='psql')
-# print(datatabulate(data))
-#
-
-# ##\\табличка со стори инфой//
-#
-# data_story = pd.DataFrame([[i.story_id] for i in test_analysis.get_story_info().values()], columns = ['Story ID'])
-# data_story['Story Name'] = pd.DataFrame([[i.story_name] for i in test_analysis.get_story_info().values()])
-# data_story['Story Timestamp'] = pd.DataFrame([[i.story_timestamp] for i in test_analysis.get_story_info().values()])
-#
-# datatabulate = lambda data: tabulate(data_story, headers='keys', tablefmt='psql')
-# print(datatabulate(data_story))

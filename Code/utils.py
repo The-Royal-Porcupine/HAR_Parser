@@ -79,8 +79,48 @@ def get_widget_frame(widget_info):
         widget_frame.columns = columns
     return widget_frame
 
-# Function for checking right timings (excluding -1)
 
+def get_common_widget_frame(widget_info):
+    columns = ['Story Entity ID', 'Story Name', 'Page Title', 'Widget Id', 'Widget Class',
+               'Widget Title', 'Widget Type', 'Widget Name', 'Time To First Byte',
+               'Widget Duration', 'Widget Timestamp']
+    if widget_info == {}:
+        widget_frame = pd.DataFrame(columns=columns)
+    else:
+        widget_frame = pd.DataFrame([widget.story_entity_id, widget.story_entity_name, widget.page_title,
+                                     widget.widget_id, widget.widget_class, widget.widget_title,
+                                     widget.widget_type, widget.widget_name, widget.widget_ttfb,
+                                     widget.widget_duration, widget.widget_timestamp] for widget in
+                                     widget_info.values())
+        widget_frame.columns = columns
+    return widget_frame
+
+
+def get_response_frames(call, widgets):
+    frames = []
+    measurements = pd.DataFrame(i for i in call.measurements)
+    columns = ['Start Timestamp', 'Total Time', 'Runtime', 'Body Size', 'Status', 'Transfer Size']
+    widget_columns = ['Story Name', 'Page Title', 'Widget ID', 'Widget Class', 'Widget Title',
+                      'Widget Name', 'Widget TTFB' ]
+    call_info = pd.DataFrame([[call.start_timestamp, call.total_time, call.runtime, call.body_size, call.status, call.transfer_size]], columns=columns)
+    timings = pd.DataFrame([call.timings])
+    timings.index = np.arange(1, len(timings) + 1)
+    widget_info = pd.DataFrame()
+    for id in call.widgets:
+        if id in widgets.keys():
+            widget_info = pd.DataFrame([[widgets[id].story_entity_name, widgets[id].page_title,
+                                        widgets[id].widget_id, widgets[id].widget_class,
+                                        widgets[id].widget_title, widgets[id].widget_name, widgets[id].widget_ttfb]], columns=widget_columns)
+            widget_info = widget_info.fillna(0)
+            widget_info.index = np.arange(1, len(widget_info) + 1)
+    call_info.index = np.arange(1, len(call_info) + 1)
+    get_response_data = pd.concat((call_info, widget_info), axis=1)
+    get_response_data = pd.concat((get_response_data, timings), axis=1)
+    frames.append(measurements)
+    frames.append(get_response_data)
+    return frames
+
+# Function for checking right timings (excluding -1)
 
 def check_time(timings):
     timings_res = {}
@@ -110,5 +150,6 @@ def check_name_url(url):
     elif url.find('commenting') != -1: url = 'Get Comments'
     elif url.find('indexeddb.worker') != -1: url = 'Scripts or Something'
     return url
+
 
 
