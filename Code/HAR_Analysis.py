@@ -1,163 +1,13 @@
+#  Import section
+
 import json
-import pandas as pd
-from tabulate import tabulate
 from datetime import datetime, date
-from abc import ABC, abstractmethod, abstractproperty
-from pptx import Presentation
+from datetime import timedelta
+import re
+from bs4 import BeautifulSoup
 
-import settings
+import objects
 import utils
-
-pd.options.display.max_columns = None
-pd.options.display.width = None
-
-
-# Descriptive classes
-# Widgets from Story_Entity from Content Library
-
-class WidgetInterface(ABC):
-    def __init__(self, widget_id):
-        self.widget_id = widget_id or ''
-
-    @abstractmethod
-    def __str__(self) -> str:
-        pass
-
-
-class Widget(WidgetInterface):
-
-    def __init__(self, widget_id, widget_type, widget_name, widget_duration, widget_timestamp):
-        super().__init__(widget_id)
-        self.widget_type = widget_type
-        self.widget_name = widget_name
-        self.widget_ttfb = 0
-        self.widget_duration = widget_duration
-        self.widget_timestamp = widget_timestamp.strftime('%m.%d.%Y %H:%M:%S')
-
-    @property
-    def __str__(self) -> str:
-        return f'widget_id: {self.widget_id}, widget_type: {self.widget_type}, widget_name: {self.widget_name},' \
-               f'widget_ttfb: {self.widget_ttfb}, widget_duration: {self.widget_duration}, ' \
-               f'widget_timestamp: {self.widget_timestamp}'
-
-
-class Widget_2(WidgetInterface):
-
-    def __init__(self, story_entity_id, story_entity_name, page_title, widget_class, widget_id, widget_title):
-        super().__init__(widget_id)
-        self.story_entity_id = story_entity_id or ''
-        self.story_entity_name = story_entity_name or ''
-        self.page_title = page_title or ''
-        self.widget_class = widget_class or ''
-        self.widget_title = widget_title or ''
-
-    def __str__(self) -> str:
-        pass
-
-
-class Widget_3(WidgetInterface):
-
-    def __init__(self, widget_id, widget_type, widget_name, widget_ttfb, widget_duration, widget_timestamp,
-                 story_entity_id, story_entity_name, page_title, widget_class, widget_title):
-        super().__init__(widget_id)
-        self.widget_type = widget_type
-        self.widget_name = widget_name
-        self.widget_ttfb = widget_ttfb or 0
-        self.widget_duration = widget_duration
-        self.widget_timestamp = widget_timestamp
-        self.story_entity_id = story_entity_id or ''
-        self.story_entity_name = story_entity_name or ''
-        self.page_title = page_title or ''
-        self.widget_class = widget_class or ''
-        self.widget_title = widget_title or ''
-
-    def __str__(self) -> str:
-        pass
-
-
-class StoryInterface(ABC):
-
-    def __init__(self, story_id, story_name):
-        self.story_id = story_id or ''
-        self.story_name = story_name or ''
-
-    @abstractmethod
-    def __str__(self) -> str:
-        pass
-
-
-class Story(StoryInterface):
-
-    def __init__(self, story_id, story_name, story_timestamp):
-        super().__init__(story_id, story_name)
-        self.story_timestamp = story_timestamp or ''
-
-    def __str__(self) -> str:
-        return f'story_id: {self.story_id}, story_name: {self.story_name}, ' \
-               f'story_timestamp: {self.story_timestamp}'
-
-
-class Story_2(StoryInterface):
-
-    def __init__(self, story_id, story_name, story_description,
-                 story_createdby, story_createdtime, story_modifiedby, story_modifiedtime):
-        super().__init__(story_id, story_name)
-        self.story_createdby = story_createdby or ''
-        temp_story_createdtime = datetime.strptime(story_createdtime, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.story_createdtime = temp_story_createdtime.strftime('%m.%d.%Y %H:%M:%S') or ''
-        self.story_modifiedby = story_modifiedby or ''
-        temp_story_modifiedtime = datetime.strptime(story_modifiedtime, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.story_modifiedtime = temp_story_modifiedtime.strftime('%m.%d.%Y %H:%M:%S') or ''
-        self.story_description = story_description or ''
-
-    def __str__(self) -> str:
-        return f'story_id: {self.story_id}, story_name: {self.story_name}, ' \
-               f'story_createdby: {self.story_createdby}, story_createdtime: {self.story_createdtime},' \
-               f'story_modifiedby: {self.story_modifiedby}, story_modifiedtime: {self.story_modifiedtime}'
-
-
-class Call:
-
-    def __init__(self, url, start_timestamp='', total_time=0, body_size=0,
-                 resource_type=0, status=0, transfer_size=0, timings=None,
-                 stories=None, widgets=None, runtime=0, measurements=None):
-        self.url = url or ''
-        if start_timestamp != '':
-            temp_start_timestamp = datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-            self.start_timestamp = temp_start_timestamp.strftime('%m.%d.%Y %H:%M:%S')
-        self.total_time = total_time or 0
-        self.body_size = body_size or 0
-        self.resource_type = resource_type or ''
-        self.status = status or ''
-        self.transfer_size = transfer_size or 0
-        self.timings = timings or {}
-        self.stories = stories or []
-        self.widgets = widgets or []
-        self.runtime = runtime or 0
-        self.measurements = measurements or []
-
-
-# class Model:
-#
-#     def __init__(self, model_id, model_timestamp, model_datasourcetype, model_createdby,
-#                  model_modifiedby, model_modifiedtime, model_instance, model_schema):
-#         self.model_id = model_id or ''
-#         self.model_timestamp = model_timestamp or ''
-#         self.model_datasourcetype = model_datasourcetype or ''
-#         self.model_createdby = model_createdby or ''
-#         self.model_modofiedby = model_modifiedby or ''
-#         self.model_modifiedtime = model_modifiedtime or ''
-#         self.model_instance = model_instance or ''
-#         self.model_schema = model_schema or ''
-
-
-class Product:
-
-    def __init__(self, product_installationid, product_patch, product_version, product_host):
-        self.product_installationid = product_installationid or ''
-        self.product_patch = product_patch or ''
-        self.product_version = product_version or ''
-        self.product_host = product_host or ''
 
 
 # Functional class
@@ -173,21 +23,6 @@ class StoryAnalyzer:
             har_parser = json.loads(f.read())
             return har_parser['log']['entries']
 
-    # def get_story_info(self):
-    #     story_info = {}
-    #     for call in self.calls:
-    #         if call['request']['url'].__contains__('userFriendlyPerfLog'):
-    #             facts = json.loads(call['response']['content']['text'])['fact']
-    #             for fact in facts:
-    #                 if ('storyId' not in fact) or (fact['storyId'] in story_info.keys()):
-    #                     continue
-    #                 else:
-    #                     story_info[fact['storyId']] = Story(
-    #                         fact['storyId'],
-    #                         fact['storyName'],
-    #                         fact['storyTstamp'])
-    #     return story_info
-
     def get_story_info_2(self):
         story_info = {}
         for call in self.calls:
@@ -196,16 +31,16 @@ class StoryAnalyzer:
                 if isinstance(json.loads(call['response']['content']['text']), list):
                     continue
                 elif "resource" in json.loads(call['response']['content']['text']).keys():
-                    story_tmp = Story_2(story_id=address_of_info['resource']['resourceId'],
+                    story_tmp = objects.Story(story_id=address_of_info['resource']['resourceId'],
                                         story_name=address_of_info['resource']['name'],
                                         story_description=address_of_info['resource']['description'],
                                         story_createdby=address_of_info['resource']['createdByDisplayName'],
                                         story_createdtime=address_of_info['resource']['createdTime'],
                                         story_modifiedby=address_of_info['resource']['modifiedByDisplayName'],
-                                        story_modifiedtime= address_of_info['resource']['modifiedTime'])
+                                        story_modifiedtime=address_of_info['resource']['modifiedTime'])
                     story_info[address_of_info['resource']['resourceId']] = story_tmp
                 elif "resourceId" in json.loads(call['response']['content']['text']).keys():
-                    story_tmp = Story_2(story_id=address_of_info['resourceId'],
+                    story_tmp = objects.Story(story_id=address_of_info['resourceId'],
                                         story_name=address_of_info['name'],
                                         story_description=address_of_info['description'],
                                         story_createdby=address_of_info['createdBy'],
@@ -215,239 +50,282 @@ class StoryAnalyzer:
                     story_info[address_of_info['resourceId']] = story_tmp
         return story_info
 
-    # def get_model_info(self):
-    #     model_info = {}
-    #     for call in self.calls:
-    #         if call['request']['url'].__contains__('contentlib'):
-    #             model_tmp = Model()
-    #             address_of_info = json.loads(call['response']['content']['text'])
-    #             if isinstance(json.loads(call['response']['content']['text']), dict):
-    #                 continue
-    #             elif json.loads(call['response']['content']['text'])[0]['resourceType'] == 'CUBE':
-    #                 model_tmp.model_id = address_of_info[0]['resourceId']
-    #                 model_tmp.model_timestamp = address_of_info[0]['name']
-    #                 model_tmp.model_datasourcetype = address_of_info[0]['description']
-    #                 model_tmp.model_createdby = address_of_info[0]['createdByDisplayName']
-    #                 model_tmp.model_modifiedby = address_of_info[0]['createdTime']
-    #                 model_tmp.model_modifiedtime = address_of_info[0]['modifiedByDisplayName']
-    #                 model_tmp.model_instance = address_of_info[0]['modifiedTime']
-    #                 model_tmp.model_schema = address_of_info[0]['']
-    #                 model_info[address_of_info['resource']['resourceId']] = story_tmp
-    #
-    #     model_id, model_timestamp, model_datasourcetype, model_createdby,
-    #     model_modifiedby, model_modifiedtime, model_instance, model_schema
-    #     return story_info
-
     def get_product_info(self):
         product_info = {}
         for call in self.calls:
-            if call['request']['url'].__contains__('application/data') and call['request']['postData'][
-                'text'].__contains__('installationID'):
-                if json.loads(call['request']['postData']['text'])['installationID'] not in product_info.keys():
-                    product_info[json.loads(call['request']['postData']['text'])['installationID']] = Product(
-                        json.loads(call['request']['postData']['text'])['installationID'],
-                        json.loads(call['request']['postData']['text'])['productpatch'],
-                        json.loads(call['request']['postData']['text'])['productversion'],
-                        json.loads(call['request']['postData']['text'])['publichost'])
+            try:
+                if call['request']['url'].__contains__('application/data') and call['request']['postData'][
+                    'text'].__contains__('installationID'):
+                    if json.loads(call['request']['postData']['text'])['installationID'] not in product_info.keys():
+                        product_info[json.loads(call['request']['postData']['text'])['installationID']] = objects.Product(
+                            json.loads(call['request']['postData']['text'])['installationID'],
+                            json.loads(call['request']['postData']['text'])['productpatch'],
+                            json.loads(call['request']['postData']['text'])['productversion'],
+                            json.loads(call['request']['postData']['text'])['publichost'])
+            except KeyError:
+                continue
         return product_info
 
-    # Not sure if the last field is needed
-
-    def get_widgets_info(self):
-        widgets = {}
-        for call in self.calls:
-            if call['request']['url'].__contains__('userFriendlyPerfLog'):
-                facts = json.loads(call['response']['content']['text'])['fact']
-                for fact in facts:
-                    if fact.__contains__('widgetId'):
-                        if fact['widgetId'] in widgets.keys() and fact['ttfb'] != None:
-                            widgets[fact['widgetId']].widget_ttfb = fact['ttfb']
-                        else:
-                            widgets[fact['widgetId']] = (Widget(
-                                fact['widgetId'],
-                                fact['widgetType'],
-                                fact['widgetName'],
-                                fact['widgetDuration'],
-                                datetime.strptime(fact['widgetTstamp'], "%Y-%m-%d %H:%M:%S.%f")
-                            ))
-        return widgets
-
-    # сначала собрать виджеты и все остальное, потом вызвать конструктор
-
-    def get_calls_info(self):
-        calls = []
-        for call in self.calls:
-            tmp_stories = []
-            tmp_widgets = []
-            tmp_measurements = []
-            tmp_runtime = 0
-            if call['request']['url'].__contains__('GetResponse'):
-                # Getting Story Name:
-                if "ClientInfo" in json.loads(call['request']['postData']['text']).keys():
-                    tmp_stories.append(
-                        json.loads(call['request']['postData']['text'])['ClientInfo']['Context']['StoryName'])
-                    # Getting Widget IDs
-                    if "WidgetId" in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'].keys():
-                        for widget in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'][
-                            'WidgetId']:
-                            widget = widget.replace('-', '')
-                            if widget not in set(tmp_widgets):
-                                tmp_widgets.append(widget)
-                # Getting Runtime
-                if 'PerformanceData' in json.loads(call['response']['content']['text']).keys():
-                    tmp_runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
-                    #                    call_tmp.runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
-                    # Getting Measurements. Measurements is a list of dictionaries formatted like {'Description': '',
-                    # 'Time': '', 'Calls': ''}
-                    for measure in json.loads(call['response']['content']['text'])['PerformanceData']['Measurements']:
-                        tmp_measurements.append(measure)
-            #                    call_tmp.measurements = measurements
-            call_tmp = Call(url=call['request']['url'],
-                            start_timestamp=call['startedDateTime'],
-                            total_time=call['time'],
-                            body_size=call['request']['bodySize'],
-                            resource_type=call['_resourceType'],
-                            status=call['response']['status'],
-                            transfer_size=call['response']['_transferSize'],
-                            timings=utils.check_time(call['timings']),
-                            stories=tmp_stories,
-                            widgets=tmp_widgets,
-                            runtime=tmp_runtime,
-                            measurements=tmp_measurements)
-            calls.append(call_tmp)
-            del call_tmp
-        return calls
+    # Widgets Info from Content Lib (all existing in a story)
 
     def get_widgets_contentlib_info(self):
         calls = []
         widgets = []
+        tmp_calc_entities = []
+        calc_entities = []
         widget_id_set = set()
         for call in self.calls:
             if call['request']['url'].__contains__('contentlib'):
                 address_of_info = json.loads(call['response']['content']['text'])
                 if isinstance(json.loads(call['response']['content']['text']), dict):
                     if 'cdata' in address_of_info.keys():
-                        for entry in address_of_info:
-                            for entity in address_of_info['cdata']['content']['entities']:
-                                if entity['type'] == 'story':
-                                    for page in entity['data']['pages']:
-                                            for widget in page['content']['widgets']:
-                                                if widget != None:
-                                                    widget_id_tmp = widget['id'].replace('-', '')
-                                                    if widget_id_tmp not in widget_id_set:
-                                                        widget_id_set.add(widget_id_tmp)
-                                                        story_entity_id_tmp = entity['data']['id'].replace('-', '')
-                                                        story_entity_name_tmp = entity['data']['title']
-                                                        page_title_tmp = page['title']
-                                                        widget_class_tmp = widget['class'].split('.')[-1]
-                                                        if widget_class_tmp == 'InfochartVizWidget':
-                                                             widget_title_tmp = widget['definition']['vizContent']['vizDefinition']['chart']['title'] + ' ' + widget['definition']['vizContent']['vizDefinition']['chart']['subTitle']
-                                                        else: widget_title_tmp = 'No title'
-                                                        widget_2_tmp = Widget_2(story_entity_id=story_entity_id_tmp,
-                                                                                story_entity_name=story_entity_name_tmp,
-                                                                                page_title=page_title_tmp,
-                                                                                widget_class=widget_class_tmp,
-                                                                                widget_id=widget_id_tmp,
-                                                                                widget_title=widget_title_tmp)
-                                                        widgets.append(widget_2_tmp)
+                        entities_address = address_of_info['cdata']['content']['entities']
                     elif 'resource' in address_of_info.keys():
                         if 'cdata' in address_of_info['resource'].keys():
-                            for entry in address_of_info:
-                                for entity in address_of_info['resource']['cdata']['content']['entities']:
-                                    if entity['type'] == 'story':
-                                        for page in entity['data']['pages']:
-                                                for widget in page['content']['widgets']:
-                                                    if widget != None:
-                                                        widget_id_tmp = widget['id'].replace('-', '')
-                                                        if widget_id_tmp not in widget_id_set:
-                                                            widget_id_set.add(widget_id_tmp)
-                                                            story_entity_id_tmp = entity['data']['id'].replace('-', '')
-                                                            story_entity_name_tmp = entity['data']['title']
-                                                            page_title_tmp = page['title']
-                                                            widget_class_tmp = widget['class'].split('.')[-1]
-                                                            if widget_class_tmp == 'InfochartVizWidget':
-                                                                 widget_title_tmp = widget['definition']['vizContent']['vizDefinition']['chart']['title'] + ' ' + widget['definition']['vizContent']['vizDefinition']['chart']['subTitle']
-                                                            else: widget_title_tmp = 'No title'
-                                                            widget_2_tmp = Widget_2(story_entity_id=story_entity_id_tmp,
-                                                                                    story_entity_name=story_entity_name_tmp,
-                                                                                    page_title=page_title_tmp,
-                                                                                    widget_class=widget_class_tmp,
-                                                                                    widget_id=widget_id_tmp,
-                                                                                    widget_title=widget_title_tmp)
-                                                            widgets.append(widget_2_tmp)
+                            entities_address = address_of_info['resource']['cdata']['content']['entities']
+                    for entry in address_of_info:
+                        for entity in entities_address:
+                            if entity['type'] == 'story':
+                                for page in entity['data']['pages']:
+                                    for widget in page['content']['widgets']:
+                                        if widget is not None:
+                                            widget_id_tmp = widget['id'].replace('-', '')
+                                            if widget_id_tmp not in widget_id_set:
+                                                widget_id_set.add(widget_id_tmp)
+                                                story_entity_id_tmp = entity['data']['id'].replace('-', '')
+                                                story_entity_name_tmp = entity['data']['title']
+                                                page_title_tmp = page['title']
+                                                widget_class_tmp = widget['class'].split('.')[-1]
+                                                if widget_class_tmp == 'InfochartVizWidget':
+                                                    widget_title_tmp = \
+                                                        widget['definition']['vizContent']['vizDefinition'][
+                                                            'chart'][
+                                                            'title'] + ' ' + \
+                                                        widget['definition']['vizContent']['vizDefinition'][
+                                                            'chart'][
+                                                            'subTitle']
+                                                    widget_title_tmp = widget_title_tmp.strip()
+                                                elif widget_class_tmp == 'TextWidget':
+                                                    widget_title_tmp = widget['definition']['text']
+                                                    soup = BeautifulSoup(widget_title_tmp, features="lxml")
+                                                    for node in soup.findAll('p'):
+                                                        widget_title_tmp = node.text
+                                                elif widget_class_tmp == 'DynamicTableWidget':
+                                                    description_path = widget['definition']['content']['dataSource'][
+                                                        '__data__']
+                                                    if 'description' in description_path.keys():
+                                                        widget_title_tmp = \
+                                                            widget['definition']['content']['dataSource']['__data__'][
+                                                                'description']
+                                                    else:
+                                                        widget_title_tmp = 'No title'
+                                                else:
+                                                    widget_title_tmp = 'No title'
+                                                widget_content_lib_tmp = objects.WidgetContentLib(
+                                                    story_entity_id=story_entity_id_tmp,
+                                                    story_entity_name=story_entity_name_tmp,
+                                                    page_title=page_title_tmp,
+                                                    widget_class=widget_class_tmp,
+                                                    widget_id=widget_id_tmp,
+                                                    widget_title=widget_title_tmp)
+                                                widgets.append(widget_content_lib_tmp)
+                            if entity['type'] == 'calculation':
+                                calculation_entities = entity['entities']
+
+                                for calc_entity in calculation_entities:
+                                    if calc_entity['id']['id'] not in set(tmp_calc_entities):
+                                        tmp_calc_entities.append(calc_entity['id']['id'])
+                                        tmp_calc_entity = objects.CalcEntity(
+                                            id=calc_entity['id']['id'],
+                                            name=calc_entity['name'],
+                                            type=calc_entity['id']['type'])
+                                        calc_entities.append(tmp_calc_entity)
+                                        del tmp_calc_entity
+
+        return widgets, calc_entities
+
+    # Widgets Info from User Friendly Perf Log (All had been loaded)
+
+    def get_widgets_info(self):
+        widgets = {}
+        for call in self.calls:
+            if call['request']['url'].__contains__('userFriendlyPerfLog'):
+                # Only events count for now (request of perflog), seems like response adds no new info
+                # facts = json.loads(call['response']['content']['text'])['fact']
+                events = json.loads(call['request']['postData']['text'])['Events'][0]['DataArray']
+                for event in events:
+                    try:
+                        if 'marker' in event.keys():
+                            tmp_widget_id = re.sub(r'.*ID: (.*)', r'\1', event['marker']).replace('-', '')
+                            tmp_widget_type = re.search('Type: \w*', event['marker']).group(0).split(' ')[1]
+                            tmp_widget_name_no_blanks = event['customInfo']['widgetTitle'].strip()
+                            tmp_widget_name = tmp_widget_name_no_blanks[:30]+'..' if len(tmp_widget_name_no_blanks) > 30 \
+                                else tmp_widget_name_no_blanks
+                            tmp_widget_timestamp = datetime.strptime(event['tstamp'][:-1], '%Y-%m-%d %H:%M:%S.%f') - \
+                                                   timedelta(milliseconds=round(float(event['duration']), 3))
+                            tmp_widget_user_action = event['lastAction']
+                            tmp_widget_user_action_timestamp = datetime.strptime(event['actionTstamp'][:-1],'%Y-%m-%d %H:%M:%S.%f')
+                            tmp_widget_duration = round(float(event['duration']), 1)
+                            tmp_finish_timestamp = datetime.strptime(event['tstamp'][:-1], '%Y-%m-%d %H:%M:%S.%f')
+                            tmp_widget_ttfb = None
+                    except KeyError:
+                        pass
+                    if tmp_widget_user_action not in widgets.keys():
+                        widgets[tmp_widget_user_action] = []
+                    if tmp_widget_id not in [x.widget_id for x in widgets[tmp_widget_user_action]]:
+                        widgets[tmp_widget_user_action].append(objects.Widget(widget_id=tmp_widget_id,
+                                                         widget_type=tmp_widget_type,
+                                                         widget_name=tmp_widget_name,
+                                                         widget_ttfb=tmp_widget_ttfb,
+                                                         widget_duration=tmp_widget_duration,
+                                                         widget_timestamp=tmp_widget_timestamp,
+                                                         widget_finish_timestamp=tmp_finish_timestamp,
+                                                         user_action=tmp_widget_user_action,
+                                                         user_action_timestamp=tmp_widget_user_action_timestamp))
                     else: continue
         return widgets
 
+    # All links' info + MDS Collecting
 
-# Можно было мерджить 2 датафрейма
+    def get_calls_info(self, calc_entities):
+        calls = []
+        for call in self.calls:
+            tmp_stories = []
+            tmp_widgets = []
+            tmp_measurements = []
+            tmp_runtime = 0
+            tmp_get_response_type = ''
+            tmp_ds_runtime = 0
+            tmp_datasources = []
 
-def get_common_widgets_info(perflog_widgets, contentlib_widgets):
-    widgets = {}
-    for cntwidget in contentlib_widgets:
-            if cntwidget.widget_id in perflog_widgets.keys():
-                widgets[cntwidget.widget_id] = (Widget_3(story_entity_id=cntwidget.story_entity_id,
-                                      story_entity_name=cntwidget.story_entity_name,
-                                      page_title=cntwidget.page_title,
-                                      widget_id = cntwidget.widget_id,
-                                      widget_class=cntwidget.widget_class,
-                                      widget_title=cntwidget.widget_title,
-                                      widget_type=perflog_widgets[cntwidget.widget_id].widget_type,
-                                      widget_name=perflog_widgets[cntwidget.widget_id].widget_name,
-                                      widget_ttfb=perflog_widgets[cntwidget.widget_id].widget_ttfb,
-                                      widget_duration=perflog_widgets[cntwidget.widget_id].widget_duration,
-                                      widget_timestamp=perflog_widgets[cntwidget.widget_id].widget_timestamp))
+            if call['request']['url'].__contains__('GetResponse'):
+
+                # Getting Get_Response call type: Batch/Analytics/Planning:
+
+                if 'Metadata' in json.loads(call['request']['postData']['text']).keys():
+                    tmp_get_response_type = json.loads(call['request']['postData']['text'])['Metadata']['Context']
+                elif 'Planning' in json.loads(call['request']['postData']['text']).keys():
+                    tmp_get_response_type = 'Planning'
+
+                # If it is Batch, collect Views/Dimensions/DataSources/Runtime Info
+
+                elif 'Batch' in json.loads(call['request']['postData']['text']).keys():
+                    tmp_get_response_type = 'Batch'
+                    batches_request = json.loads(call['request']['postData']['text'])['Batch']
+                    batches_response = json.loads(call['response']['content']['text'])['Batch']
+                    for batch_req in batches_request:
+                        dim_members = {}
+                        # DS ID only for getting runtime from response + cache info
+                        tmp_ds_id = batch_req['Analytics']['DataSource']['InstanceId']
+                        for batch_res in batches_response:
+                            if batch_res['DataSource']['InstanceId'] == tmp_ds_id:
+                                tmp_ds_runtime = round(float(batch_res['PerformanceData']['Runtime']), 3)
+                                for message in batch_res['Grids'][0]['Messages']:
+                                    if 'cache' in message['Text']:
+                                        tmp_cache = str(message['Text']).replace(' (post process)', '')
+
+                        # tmp_ds_type = batch_req['Analytics']['DataSource']['Type']
+                        if 'Name' in batch_req['Analytics']['Definition'].keys():
+                            tmp_view = batch_req['Analytics']['Definition']['Name']
+                            try:
+                                calc_entity = next((x for x in calc_entities if x.id == tmp_view))
+                            except StopIteration:
+                                continue
+                            if calc_entity:
+                                tmp_ds_name = calc_entity.name
+                                tmp_ds_type = calc_entity.type
+                        else:
+                            tmp_view = 'Result Set'
+                            tmp_ds_name = 'Fetching Result Set'
+                            tmp_ds_type = 'Result Set'
+
+                        dim_number = 1
+                        for dimension in batch_req['Analytics']['Definition']['Dimensions']:
+                            dim_name = str(dim_number) + '. ' + dimension['Name']
+                            dim_number += 1
+                            dim_members[dim_name] = []
+                            if dimension['Axis'] == 'Columns' and 'Members' in dimension.keys():
+                                for member in dimension['Members']:
+                                    if 'Name' in member.keys():
+                                        try: calc_entity = next((x for x in calc_entities if x.id == member['Name'].rstrip('.ID')))
+                                        except StopIteration: continue
+                                        if calc_entity:
+                                            if tmp_view != 'Result Set': tmp_member_name = member['Name'] + ' (' + \
+                                                                                           calc_entity.name + ' \ ' + \
+                                                                                           calc_entity.type + ') '
+                                        dim_members[dim_name].append(tmp_member_name)
+
+                        datasource_tmp = objects.DataSource(ds_id=tmp_ds_id,
+                                                            dimensions=dim_members,
+                                                            ds_runtime=tmp_ds_runtime,
+                                                            view=tmp_view,
+                                                            ds_name=tmp_ds_name,
+                                                            ds_type=tmp_ds_type,
+                                                            ds_cache=tmp_cache)
+                        tmp_datasources.append(datasource_tmp)
+                        del datasource_tmp
+
+                # Getting Story Name:
+
+                if "ClientInfo" in json.loads(call['request']['postData']['text']).keys():
+                    tmp_stories.append(
+                        json.loads(call['request']['postData']['text'])['ClientInfo']['Context']['StoryName'])
+
+                    # Getting Widget IDs:
+
+                    if "WidgetId" in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'].keys():
+                        for widget in json.loads(call['request']['postData']['text'])['ClientInfo']['Context'][
+                            'WidgetId']:
+                            widget = widget.replace('-', '')
+                            if widget not in set(tmp_widgets):
+                                tmp_widgets.append(widget)
+
+                # Getting Common Runtime:
+
+                if 'PerformanceData' in json.loads(call['response']['content']['text']).keys():
+                    tmp_runtime = json.loads(call['response']['content']['text'])['PerformanceData']['Runtime']
+
+                    # Getting Measurements. Measurements is a list of dictionaries formatted like {'Description': '',
+                    # 'Time': '', 'Calls': ''}
+
+                    for measure in json.loads(call['response']['content']['text'])['PerformanceData']['Measurements']:
+                        tmp_measurements.append(measure)
+
+                # Create Call of type Get_Response:
+
+                call_2_tmp = objects.Call_2(url=call['request']['url'],
+                                    get_response_type=tmp_get_response_type,
+                                    start_timestamp=call['startedDateTime'],
+                                    total_time=call['time'],
+                                    body_size=call['request']['bodySize'],
+                                    resource_type=call['_resourceType'],
+                                    status=call['response']['status'],
+                                    transfer_size=call['response']['_transferSize'],
+                                    timings=utils.check_time(call['timings']),
+                                    stories=tmp_stories,
+                                    widgets=tmp_widgets,
+                                    runtime=tmp_runtime,
+                                    measurements=tmp_measurements,
+                                    datasources=tmp_datasources)
+                calls.append(call_2_tmp)
+                del call_2_tmp
+
+            # If it's not a Get_Response call, create a basic Call object
+
             else:
-                widgets[cntwidget.widget_id] = (Widget_3(story_entity_id=cntwidget.story_entity_id,
-                                      story_entity_name=cntwidget.story_entity_name,
-                                      page_title=cntwidget.page_title,
-                                      widget_id = cntwidget.widget_id,
-                                      widget_class=cntwidget.widget_class,
-                                      widget_title=cntwidget.widget_title,
-                                      widget_type='Unknown',
-                                      widget_name='Unknown',
-                                      widget_ttfb=0,
-                                      widget_duration=0,
-                                      widget_timestamp=0))
-    return widgets
+                call_tmp = objects.Call(url=call['request']['url'],
+                                start_timestamp=call['startedDateTime'],
+                                total_time=call['time'],
+                                body_size=call['request']['bodySize'],
+                                resource_type=call['_resourceType'],
+                                status=call['response']['status'],
+                                transfer_size=call['response']['_transferSize'],
+                                timings=utils.check_time(call['timings']))
+                calls.append(call_tmp)
+                del call_tmp
+        return calls
 
 
-# Export Part
 
-test_analysis = StoryAnalyzer(settings.HAR_PATH)
-test_analysis.read_har_file()
 
-test_widgets_content_lib = test_analysis.get_widgets_contentlib_info()
 
-test_calls = test_analysis.get_calls_info()
-test_products = test_analysis.get_product_info()
-test_widgets = test_analysis.get_widgets_info()
-test_story = test_analysis.get_story_info_2()
-common_widgets = get_common_widgets_info(test_widgets, test_widgets_content_lib)
-
-story_runtime = utils.get_story_runtime_data(test_calls)
-story_summary = utils.get_story_summary(test_calls)
-widgets_frame = utils.get_widget_frame(test_widgets)
-product_frame = utils.get_product_frame(test_products)
-story_frame = utils.get_story_frame(test_story)
-story_product_frame = pd.concat((product_frame, story_frame))
-common_widgets_frame = utils.get_common_widget_frame(common_widgets)
-
-get_response_calls = list(filter(lambda x: (x.url.__contains__('GetResponse')), test_calls))
-
-with pd.ExcelWriter('story_tables_generated.xlsx', mode='A') as writer:
-    story_runtime.to_excel(writer, sheet_name='story_runtime')
-    story_summary.to_excel(writer, sheet_name='story_metadata')
-    story_product_frame.to_excel(writer, sheet_name='general_info')
-    widgets_frame.to_excel(writer, sheet_name='widget_runtime_perflog')
-    common_widgets_frame.to_excel(writer, sheet_name='widget_runtime_common')
-    idx = 0
-    for call in get_response_calls:
-        if call.measurements:
-            test_frame = utils.get_response_frames(call, common_widgets)
-            sheet_name_1 = 'Get Response Timings ' + str(idx+1)
-            sheet_name_2 = 'Get Response Meta ' + str(idx+1)
-            test_frame[0].to_excel(writer, sheet_name=sheet_name_1)
-            test_frame[1].to_excel(writer, sheet_name=sheet_name_2)
-            idx +=1
-
-writer.save()
