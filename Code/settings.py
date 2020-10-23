@@ -1,1 +1,0 @@
-HAR_PATH = '/Users/annademidova/PycharmProjects/HAR_Parser/HAR Files/elaborator 16.05.2020.har'
